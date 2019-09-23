@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\UserService;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Facades\Socialite;
+use Auth;
 
 class LoginController extends Controller
 {
@@ -29,22 +31,16 @@ class LoginController extends Controller
      * @var string
      */
     protected $redirectTo = '/home';
+    private $userService;
 
     /**
-     * Create a new controller instance.
-     *
-     * @return void
+     * LoginController constructor.
+     * @param UserService $userService
      */
-    public function __construct()
+    public function __construct(UserService $userService)
     {
         $this->middleware('guest')->except('logout');
-    }
-
-    protected function sendFailedLoginResponse(Request $request)
-    {
-        throw ValidationException::withMessages([
-            $this->username() => ['帳戶或密碼錯誤'],
-        ]);
+        $this->userService = $userService;
     }
 
     public function redirectToGoogle()
@@ -54,7 +50,22 @@ class LoginController extends Controller
 
     public function handleGoogleCallback()
     {
-        $user = Socialite::driver('google')->user();
-        dd($user);
+        $userInformation = Socialite::driver('google')->user();
+
+        $user = $this->userService->getUserByEmail($userInformation->email);
+
+        if (empty($user)) {
+            $user = $this->userService->createUser($userInformation->email, $userInformation->name);
+        }
+
+        Auth::login($user);
+        return redirect()->intended('/home');
+    }
+
+    protected function sendFailedLoginResponse(Request $request)
+    {
+        throw ValidationException::withMessages([
+            $this->username() => ['帳戶或密碼錯誤'],
+        ]);
     }
 }

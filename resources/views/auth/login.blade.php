@@ -54,6 +54,9 @@
                                 <button type="submit" class="btn btn-primary">
                                     Login
                                 </button>
+                                <a href="{{ route('login.google') }}" type="button" class="btn btn-warning">
+                                    Google Login
+                                </a>
 
                                 {{--<a class="btn btn-link" href="{{ route('password.request') }}">--}}
                                     {{--Forgot Your Password?--}}
